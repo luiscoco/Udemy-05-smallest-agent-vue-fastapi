@@ -1,0 +1,146 @@
+[
+  {
+    "number": 1,
+    "title": "Run agent (prompt)",
+    "source": "frontend/src/Lab.vue",
+    "language": "javascript",
+    "text": "The Vue component trims the prompt and blocks duplicate or invalid submissions.",
+    "code": "async function run() {\n  if (running.value || !trimmed.value || trimmed.value.length > 4000) return;\n  state.value = 'running'; error.value = ''; notice.value = ''; result.value = null; messages.value = []; elapsed.value = 0;\n  controller = new AbortController();\n  const started = performance.now();",
+    "explanation": "refs store request state; computed values derive validity and safe presentation. The API repeats validation independently."
+  },
+  {
+    "number": 2,
+    "title": "POST /api/agent/stream",
+    "source": "frontend/src/api.js",
+    "language": "javascript",
+    "text": "The browser posts a JSON prompt and consumes the same-origin response stream.",
+    "code": "const response = await fetch('/api/agent/stream', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }), signal });\nif (!response.ok) throw new Error(detail(await response.json().catch(() => null), `The stream could not start (HTTP ${response.status}).`));\nif (!response.body) throw new Error('The server returned an empty stream.');\nlet completed = false, finalReceived = false;",
+    "explanation": "Vite preserves the browser Host when forwarding /api during development. Production serves Vue and the API from the same FastAPI server."
+  },
+  {
+    "number": 3,
+    "title": "Validate; tools disabled",
+    "source": "backend/app/agent_service.py",
+    "language": "python",
+    "text": "The service disables built-in tools and isolates settings, skills and MCP.",
+    "code": "return ClaudeAgentOptions(\n    tools=[], allowed_tools=[], permission_mode='dontAsk',\n    setting_sources=[], skills=[], mcp_servers={}, strict_mcp_config=True,\n    max_turns=self.settings.agent_max_turns,\n    model=self.settings.claude_model or None,\n    system_prompt=self.settings.agent_system_prompt or None,\n    env={'ANTHROPIC_API_KEY': self.settings.anthropic_api_key.get_secret_value().strip(),\n         'ENABLE_CLAUDEAI_MCP_SERVERS': 'false'},\n)",
+    "explanation": "tools=[] is the tool ban; allowed_tools=[] only controls automatic approvals. The endpoint separately validates the bounded JSON body and trimmed prompt."
+  },
+  {
+    "number": 4,
+    "title": "query() / async for",
+    "source": "backend/app/agent_service.py",
+    "language": "python",
+    "text": "The recognizable query() → async for → ResultMessage loop remains on the server.",
+    "code": "source = self.query_fn(prompt=prompt, options=self.agent_options())\nasync with aclosing(source):\n    async for message in source:\n        if isinstance(message, ResultMessage):\n            return self.result_data(message)\nraise RuntimeError('Agent ended without a final result')",
+    "explanation": "This selected run_agent excerpt returns the final answer. The streaming function consumes the same SDK boundary and projects each intermediate message. aclosing releases the iterator on return, error or cancellation."
+  },
+  {
+    "number": 5,
+    "title": "Prompt; no built-in tools",
+    "source": "backend/app/agent_service.py",
+    "language": "python",
+    "text": "The SDK receives private model, system-prompt and authentication configuration.",
+    "code": "    model=self.settings.claude_model or None,\n    system_prompt=self.settings.agent_system_prompt or None,\n    env={'ANTHROPIC_API_KEY': self.settings.anthropic_api_key.get_secret_value().strip(),\n         'ENABLE_CLAUDEAI_MCP_SERVERS': 'false'},\n)",
+    "explanation": "This options excerpt represents the SDK/provider boundary. The SDK owns the CLI runtime and model transport; the application does not invent a second HTTP call to Claude."
+  },
+  {
+    "number": 6,
+    "title": "Model response",
+    "source": "backend/app/agent_service.py",
+    "language": "python",
+    "text": "The SDK yields message objects while managing inference and lifecycle events.",
+    "code": "async for message in source:\n    if isinstance(message, ResultMessage):\n        return self.result_data(message)",
+    "explanation": "The model-to-SDK arrow is observed through this iterator. Messages may arrive at different points in inference; they are not token-level deltas."
+  },
+  {
+    "number": 7,
+    "title": "Safe SDK message",
+    "source": "backend/app/agent_service.py",
+    "language": "python",
+    "text": "Only explicit public fields are forwarded to the API.",
+    "code": "        yield {'type': kind, 'summary': summary, 'data': data}\nif not found_result:\n    raise RuntimeError('Agent ended without a final result')",
+    "explanation": "The branches above this yield allowlist text, system subtype and final metrics. Thinking, raw SDK objects, paths, environment and tool arguments are excluded."
+  },
+  {
+    "number": 8,
+    "title": "SSE message event",
+    "source": "backend/app/main.py",
+    "language": "python",
+    "text": "Native FastAPI SSE encodes each projected message and then the terminal event.",
+    "code": "        async with aclosing(agent.stream_agent(body.prompt)) as messages:\n            async for message in messages:\n                yield ServerSentEvent(event='message', data=message)\n        yield ServerSentEvent(event='done', data={'status': 'complete'})\nexcept Exception:",
+    "explanation": "Yield ServerSentEvent objects directly. The framework owns framing, flushing, heartbeat and disconnect handling; do not double-encode its JSON data."
+  },
+  {
+    "number": 9,
+    "title": "Update typed state",
+    "source": "frontend/src/Lab.vue",
+    "language": "javascript",
+    "text": "Each parsed message appends a timestamped timeline entry to Vue state.",
+    "code": "else await client.stream(trimmed.value, message => {\n  if (messages.value.length < 500) messages.value.push({ ...message, elapsed: (performance.now() - started) / 1000 });\n  if (message.type === 'ResultMessage' && isAgentResult(message.data)) result.value = message.data;\n}, controller.signal);\nif (!isAgentResult(result.value)) throw new Error('The agent returned no final result. Please try again.');",
+    "explanation": "The UI caps visible rows at 500 while continuing to process the final result. Vue renders the inspector from reactive state rather than manual DOM writes."
+  },
+  {
+    "number": 10,
+    "title": "ResultMessage fields",
+    "source": "backend/app/agent_service.py",
+    "language": "python",
+    "text": "Normalize the SDK final answer, turns, duration, estimated cost and error flag.",
+    "code": "def result_data(self, message: ResultMessage) -> dict:\n    return {\n        'result': self.redact(message.result or ''),\n        'num_turns': message.num_turns,\n        'duration_ms': message.duration_ms,\n        'total_cost_usd': message.total_cost_usd,\n        'is_error': message.is_error or message.subtype != 'success',\n    }",
+    "explanation": "A non-success subtype remains an error even if is_error was false. Exact credential occurrences are redacted, and an absent cost stays null rather than being invented."
+  },
+  {
+    "number": 11,
+    "title": "SSE ResultMessage",
+    "source": "frontend/src/api.js",
+    "language": "javascript",
+    "text": "Runtime-check the public message and final result before dispatching to Vue.",
+    "code": "if (event === 'message') {\n  const message = messageFrom(data);\n  if (message.type === 'ResultMessage') finalReceived = true;\n  onMessage(message);\n}\nif (event === 'done') completed = true;",
+    "explanation": "The final ResultMessage travels in the same message event as progress. The component independently validates the final fields before updating the answer."
+  },
+  {
+    "number": 12,
+    "title": "Render answer + metrics",
+    "source": "frontend/src/code.js",
+    "language": "javascript",
+    "text": "Markdown fenced code uses language-aware highlighting and all output is sanitized.",
+    "code": "const markdown = new Marked({ renderer: { code: ({ text, lang }) => `<pre><code class=\"hljs\">${highlightCode(text, (lang || '').split(/\\s+/)[0])}</code></pre>` } });\n// Vue v-html is used only with this sanitized output, never raw model text.\nexport function renderMarkdown(text) { return DOMPurify.sanitize(markdown.parse(text, { async: false })); }",
+    "explanation": "Only the sanitized computed answer reaches Vue v-html. Highlighting escapes source before DOMPurify sanitizes the generated token markup."
+  },
+  {
+    "number": 13,
+    "title": "SSE done event",
+    "source": "frontend/src/api.js",
+    "language": "javascript",
+    "text": "Require both final result and terminal done before resolving the stream.",
+    "code": "    if (event === 'done') completed = true;\n  });\n  if (!completed || !finalReceived) throw new Error('The connection ended before the agent finished. Please try again.');\n},",
+    "explanation": "The final result is authoritative for success. Transport completion does not override is_error, and an early disconnect stays a failure."
+  },
+  {
+    "number": 14,
+    "title": "SSE error; no done",
+    "source": "backend/app/main.py",
+    "language": "python",
+    "text": "Errors before a query response become safe 502 responses; streaming failures use SSE error with no done.",
+    "code": "except Exception:\n    raise HTTPException(502, FAILURE) from None",
+    "explanation": "The query excerpt demonstrates the safe failure boundary. The stream function has its own catch yielding an error event after SSE begins; raw exception details are never returned."
+  },
+  {
+    "number": 15,
+    "title": "Error + snackbar",
+    "source": "frontend/src/Lab.vue",
+    "language": "javascript",
+    "text": "Restore a readable error state and notification when the request fails.",
+    "code": "  } catch (failure) {\n    if (failure.name === 'AbortError') return;\n    state.value = 'error'; error.value = failure.message || 'The agent could not finish.'; notice.value = error.value;\n  } finally { clearInterval(timer); elapsed.value = (performance.now() - started) / 1000; }\n}",
+    "explanation": "Specific HTTP validation/origin errors survive the API client. Clipboard feedback also uses a visible notification. Timers and abort controllers are cleaned up."
+  },
+  {
+    "number": 16,
+    "title": "Key: SSE error / input: 422",
+    "source": "backend/app/main.py",
+    "language": "python",
+    "text": "A missing key stops the stream before query() is called; invalid prompt bodies are rejected before SSE starts.",
+    "code": "yield ServerSentEvent(event='error', data={'detail': MISSING_KEY})\nreturn",
+    "explanation": "The corresponding query route returns 503. Pydantic rejects blank/oversized prompts with 422. None of these paths spends model credits."
+  }
+]

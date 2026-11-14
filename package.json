@@ -1,0 +1,12 @@
+{
+  "name": "smallest-agent-vue-fastapi-launcher",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "start": "npm --prefix frontend run start",
+    "build": "npm --prefix frontend run build",
+    "test": "npm --prefix frontend run test",
+    "generate:lesson": "npm --prefix frontend run generate:lesson"
+  }
+}

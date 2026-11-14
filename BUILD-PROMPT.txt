@@ -1,0 +1,133 @@
+You are working in an EMPTY folder. Create a complete, runnable educational enterprise-style application from scratch.
+
+APPLICATION: The Smallest Agent - Lesson 0 - Vue 3 + FastAPI + Python edition.
+
+Create the same application experience as the previous editions in a NEW independent folder named 05-smallest-agent-vue-fastapi. Preserve every earlier application, prompt and environment file. Create this standalone prompt alongside the other prompts and an identical BUILD-PROMPT.txt inside the new folder. Never read, print, borrow or copy another application's real .env or credentials.
+
+STACK AND CORE LOOP
+- Vue 3 Composition API, Single File Components and Vue Router; Vite for development and production builds.
+- FastAPI, Python, Pydantic models/settings, native FastAPI SSE and Uvicorn.
+- Use the actual Python Claude Agent SDK. The core lesson remains query(prompt=..., options=...) -> async for message -> ResultMessage.
+- One prompt by default, AGENT_MAX_TURNS=1, tools disabled. Do not replace the SDK with a hand-written model REST call, a fabricated result, a C# client SDK or a Node bridge.
+- Verify current official docs and actual installed SDK options before coding:
+  https://vuejs.org/guide/quick-start.html
+  https://router.vuejs.org/
+  https://fastapi.tiangolo.com/tutorial/
+  https://code.claude.com/docs/en/agent-sdk/python
+- Pin installed versions and commit lockfiles. Verified baseline: Vue 3.5.45, Vue Router 5.4.0, Vite 8.3.6, @vitejs/plugin-vue 6.0.10, @vue/test-utils 2.5.1, Vitest 5.1.0, jsdom 30.0.0, Marked 18.1.3, DOMPurify 3.4.17, Highlight.js 11.12.0; Python claude-agent-sdk 0.2.179, FastAPI 0.162.2, Uvicorn 0.54.0, Pydantic 2.14.3, pydantic-settings 2.16.2, pytest 9.2.0 and httpx 0.28.1. Verify availability, install and test rather than assuming version compatibility.
+- Test on the available Python 3.14 and Node.js 24 environment. Keep package-lock.json, exact direct Python requirements and a record of resolved Python packages, clearly marking a platform-specific full lock if generated on Windows.
+
+FOLDERS AND RUN MODES
+- backend/app: main.py, agent_service.py, config.py, schemas.py; only agent_service.py imports the SDK.
+- backend/run.py: deterministic Windows-compatible launcher; backend/.env.example; backend/tests.
+- frontend/src: App.vue, Lab.vue, Lesson.vue, CodeBlock.vue, router.js, api.js, code.js, style.css and generated lesson JSON.
+- frontend/public: local course illustration and SVG/PlantUML downloads; frontend/tests; scripts/ for deterministic source/diagram generation.
+- Root .venv, README.md, ASSETS.md, VERIFICATION.md, BUILD-PROMPT.txt and appropriate ignore rules. Include a dependency-free root package.json forwarding dev/start/build/test/generate:lesson to frontend through npm --prefix frontend run, so npm run dev works from the application root as well as frontend. Install packages with npm --prefix frontend ci; keep the separate Python backend terminal explicit.
+- Development: Vue at http://127.0.0.1:4600, FastAPI at http://127.0.0.1:8100. Use independent ports, never hijack the earlier apps' servers.
+- Vite proxies relative /api, /docs and /openapi.json to 8100 with changeOrigin:false, preserving the browser Host for same-origin checks. No wildcard CORS or public API-key frontend variable.
+- Production-style local mode: npm run build, then restart FastAPI; it serves frontend/dist alongside the API on 8100. Mount static files after API/docs routes. Unknown API paths must remain 404, not silently return an HTML success.
+- Use Vue Router hash history so the built application does not require a broad server HTML fallback. Treat Vite preview as a static-only preview, not a working API proxy mode.
+- Use explicit root .venv interpreter paths in Windows commands; activation must not be required.
+- The Python SDK needs subprocess support on Windows. backend/run.py must use a Proactor-capable event loop and avoid reload-mode loop selection problems. Do not hide NotImplementedError by pretending the SDK is unavailable.
+
+VISUAL REFERENCE AND ALL PRIOR DESIGN REQUESTS
+Reference: https://github.com/luiscoco/Udemy-Claude-Agent-SDK-lesson01-app
+
+Build the same recognizable course experience:
+- Large readable fonts: approximately 21 px body, at least 16 px secondary text and 18 px code, generous line-height and clear heading hierarchy.
+- Light blue input, lilac inspector, mint answer and alternating pastel peach/mint/lilac/blue teaching cards. Avoid making every card plain white.
+- Blue/orange accents, rounded cards, fine borders, spacious layout and restrained shadows.
+- Persistent light/dark theme with adequate contrast. Handle unavailable browser storage without breaking the app.
+- Responsive multi-column lab/learning layouts that stack on small screens; horizontally scroll code/diagram inside bounded focusable regions instead of overflowing the page.
+- Reuse the known local course astronaut asset when available, with alt text and provenance. Copy specific visual assets only, never a project directory containing secrets.
+- Native controls, labels, skip link, visible focus, aria-current navigation, reduced-motion support, minimum 44 px touch targets, keyboard submission and visible error/status feedback.
+- All displayed code must be syntax-colored, including Python, JavaScript, Vue/XML, PowerShell, JSON and configuration examples. Use Highlight.js and sanitization; unescaped source must never become active HTML.
+- Render answers as sanitized Markdown with colored fenced code. Use Vue v-html only with trusted sanitizer output, never with raw model text.
+
+FIVE COMPLETE SECTIONS
+Use real Vue Router routes for Application lab, What you will learn, How to run, Architecture & workflow and Code walkthrough.
+
+1. APPLICATION LAB
+- Header with course identity, stack tags, server/key-presence status, docs link and theme control.
+- Hero with a clear beginner-friendly explanation and course illustration.
+- Three-step introduction: write prompt, watch messages, inspect result.
+- Prompt textarea initially Hello world!, trim-aware character counter, 4000-character limit and example prompts including What is Vue 3?.
+- Stream and Simple controls, Run agent button, Ctrl+Enter submission, blank/oversized/duplicate guard, disabled controls while busy and elapsed timer.
+- Stream mode shows real safe SDK messages and final result; Simple returns one result without fabricating intermediate events.
+- Answer panel: idle/running/success/error states, sanitized Markdown, copy and Markdown download, turns/duration/SDK-estimated cost. Null cost remains Not reported.
+- Inspector: relative timestamps, message badges, expandable highlighted JSON and a bounded visible timeline. Continue processing final results after the visible-row limit.
+- Preserve an is_error result even if transport emitted done. Reject missing final result and incomplete stream.
+- Show precise safe backend detail for failed stream HTTP responses, with an HTTP-status fallback for non-JSON errors. Never hide an origin/validation failure behind a generic stream-start message.
+- Safe failure notice/snackbar, retry behavior and clipboard fallback. Clean up timers, readers and request abort controllers on teardown.
+
+2. WHAT YOU WILL LEARN
+- At least six useful teaching cards covering the original SDK loop, refs/computed/v-model, Vue Router, FastAPI/Pydantic validation, private credentials, message streaming, tool isolation and safe rendering.
+- Explain that SDK-message streaming is not token streaming.
+- Include meaningful next-step links within the lesson.
+
+3. HOW TO RUN
+- Complete Windows Terminal/PowerShell setup commands starting from the Lesson 0 workspace.
+- New root .venv creation, backend dependency install and frontend npm ci.
+- backend/.env setup that copies the example ONLY when an existing file is absent; never overwrite a user's real key.
+- Two separate terminal blocks, URLs 4600 and 8100, docs link, Ctrl+C and restart behavior.
+- Explain process environment precedence, optional model/system prompt, turn limits and health versus valid provider authentication.
+- Verification/regeneration/build commands and one-Python-server built mode. Explain that Vite preview does not proxy the API.
+- Explain why the backend launcher avoids reload on Windows. Include relevant Git Bash troubleshooting if the SDK CLI requires it; custom Bash paths can be supplied in the launching process environment.
+
+4. ARCHITECTURE AND UML WORKFLOW
+- Explain Vue component/state -> fetch client -> FastAPI endpoints/private service -> Python SDK/CLI -> Claude API.
+- Include a real UML sequence diagram with five lifelines, calls/returns, a message loop and success/error/input alternatives.
+- Provide local SVG download and editable PlantUML source. Use valid independent participant aliases.
+- Exactly 16 numbered interactions: submit prompt; same-origin POST; validation/options; SDK query/async iteration; SDK/provider boundary; model response observation; safe SDK projection; native SSE forwarding; Vue timeline update; normalized result; ResultMessage dispatch; sanitized answer/metrics; done enforcement; safe error/no done; UI error/snackbar; missing-key/invalid-prompt rejection.
+- EVERY interaction must have its own pastel explanation card with the matching number/title, real source path, syntax-colored code excerpt from this Vue/Python app and a clear explanation of how it implements that arrow.
+- Do not illustrate the Vue edition with React, Next.js, Blazor or Express code. Excerpts may omit surrounding context, but indicate separate boundaries accurately.
+- Implement a deterministic Node generator reading source markers and local diagram templates. Missing markers or mismatched/missing labels must fail clearly. Do not invent a direct provider HTTP call when the SDK owns that boundary.
+- Keep the diagram readable through a focusable horizontal-scroll region on narrow screens.
+
+5. CODE WALKTHROUGH
+- At least five highlighted real source excerpts: prompt/state handling, JSON POST, SDK query/async loop, final-result normalization and sanitized rendering.
+- Each excerpt has a filename and meaningful explanation. Generated lesson content must stay synchronized with actual code.
+
+NAVIGATION MUST WORK
+- Use reactive Vue Router route props/RouterView for the visible section and active link; do not only modify a URL or render each route correctly on first load.
+- KeepAlive may preserve lab prompt/result while visiting teaching sections.
+- Test clicks through ALL five tabs on one mounted application, active-tab updates, all 16 architecture cards, repeated section visits and prompt preservation when returning to the lab.
+- Test the actual production hash history as well as memory history. Handle direct lesson links. A skip link must focus lesson content without overwriting the route hash.
+- Never claim that separate HTTP page loads prove interactive navigation works; this was a bug in an earlier edition and must not recur.
+
+API, SDK AND PRIVATE SETTINGS
+- GET /api/health returns status and key-presence boolean, no secret. It is not an authentication check.
+- POST /api/agent/query accepts JSON prompt and returns a typed final AgentResponse with result, num_turns, duration_ms, total_cost_usd and is_error.
+- POST /api/agent/stream accepts the same input and uses native fastapi.sse EventSourceResponse/ServerSentEvent for message, error and done events. Yield objects directly; do not double-encode the data or hand-write a second framing layer.
+- FastAPI provides real /docs and /openapi.json, including request schema and useful failure descriptions.
+- Validate trimmed string prompts of 1-4000 characters. Bound actual received body bytes to 32 KiB, including chunked bodies, before parsing.
+- Meaningful errors: malformed JSON 400, foreign origin 403, oversized body 413, wrong content type 415, invalid prompt 422. Do not echo submitted data or exception context.
+- Missing key: query 503, stream error event; no SDK work. Query provider failures: safe 502. After SSE starts: safe error with no done. Do not leak raw provider errors.
+- Same-origin check uses actual request scheme and Host including port, preserving 127.0.0.1 versus localhost identity. Do not trust arbitrary forwarded headers or add wildcard CORS. Test both local host forms through the real Vite proxy.
+- Require final ResultMessage before done. Missing result, failure and truncated connection remain failures. A non-success SDK result subtype must not become a success solely because is_error was false.
+- Set SDK tools=[], allowed_tools=[], permission_mode='dontAsk', empty settings/skills/MCP and strict MCP configuration, max_turns from settings. Clearing allowed_tools alone is not a tool ban.
+- Pass the private key through SDK subprocess options and disable remote Claude.ai MCP connections for this run. Avoid process-wide credential mutation.
+- Forward only allowlisted system subtype, text and final metrics. Exclude raw SDK objects, environment, paths, session IDs, thinking, tool inputs and provider traces. Redact key occurrences before presentation and before truncating summaries.
+- Close async iterators on early result, exception, normal end and cancellation. Enforce a three-minute deadline. Query disconnects must cancel the running task; native SSE must propagate stream disconnect cancellation and handle heartbeats.
+- The frontend fetch parser supports UTF-8 split across bytes, CRLF, partial/multiple frames, comments and multiline data. Runtime-check public messages/final results. Cancel readers on errors and validate both final result and done.
+- Pydantic settings load only this backend/.env with environment precedence and masked SecretStr. AGENT_MAX_TURNS is 1-10, default 1. Placeholder keys are unconfigured.
+- No frontend secret, VITE_ API key, browser SDK call or copied credentials.
+
+ENVIRONMENT EXAMPLE
+ANTHROPIC_API_KEY=sk-ant-replace-with-your-key
+CLAUDE_MODEL=
+AGENT_SYSTEM_PROMPT=
+AGENT_MAX_TURNS=1
+
+TESTING AND DELIVERY
+- Implement meaningful pytest tests of the real FastAPI app/Pydantic/native SSE, replacing only the SDK query boundary and using actual SDK message dataclasses.
+- Cover both endpoints, validation/limits/chunked bodies, matching/foreign origins, SDK options, safe result/message projection, non-success subtype, missing key/result, no done on failure, iterator closure and cancellation/disconnect.
+- Use Vue Test Utils, real Vue Router, Vitest/jsdom to verify tab clicks, production hash links, repeated visits, retained prompt, setup/diagram content, Stream/Simple, trim/keyboard, duplicate locks, errors/retry, is_error, theme, safe rendering and unmount abort.
+- Test fetch/SSE framing and HTTP details/status fallbacks independently. Tests need no API credits.
+- Run the frontend production build and pip dependency checks. Verify generator reproducibility, valid SVG/five lifelines, 16 matching source cards and byte-identical prompt copies.
+- Start both local run modes and make actual HTTP requests: UI shell/assets, docs/schema, health, origin validation, missing-key query/SSE and preserved host through Vite. Do not describe the Vue SPA shell as SSR lesson content.
+- Do not borrow another edition's API key for verification. If this new app has no configured key, state that a real Claude response was not tested.
+- Use browser QA if available; otherwise document that tests use jsdom plus HTTP and do not claim screenshot/full browser verification.
+- Include complete README setup/run/env/check/build/troubleshooting instructions, ASSETS.md provenance and official sources, and VERIFICATION.md with real outcomes and limits.
+- Keep local lesson scope: do not add unrequested external deployment, authentication flows, persistence or tool-enabled capabilities. Shared public hosting would need deliberate authentication and quotas.
+- Leave prior applications untouched. Stop temporary verification servers you started. Deliver the new app and prompt with concise Windows run commands, URLs, check outcomes and material limits.
